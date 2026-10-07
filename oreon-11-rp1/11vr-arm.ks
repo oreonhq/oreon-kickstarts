@@ -10,7 +10,7 @@ lang en_US.UTF-8
 # Shutdown after installation
 shutdown
 # System timezone
-timezone US/Centeral
+timezone America/Chicago
 # Network information
 network  --bootproto=dhcp --device=link --activate
 
@@ -146,6 +146,7 @@ User: oreonvr / password: oreonvr
 
 EOF
 
+# Surf's browser engine (Oreon's repos do not ship Chromium); needs network during the build
 flatpak remote-add --system --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo
 flatpak install --system -y --noninteractive flathub org.chromium.Chromium || \
     echo "WARNING: Chromium could not be installed; Surf will ask to install it from the Store"
@@ -179,6 +180,7 @@ oreon-defense
 
 # System Essentials
 bash
+ffmpeg
 coreutils
 glibc
 systemd
@@ -223,10 +225,9 @@ plasma-systemmonitor
 ark
 libGLES
 lspci
-# uncomment once built below
 # gparted
 
-# Minimal KDE Plasma (runs headless inside the VR shell)
+# Minimal KDE Plasma
 plasma-desktop
 plasma-workspace
 kwin
@@ -245,17 +246,21 @@ plasma-setup
 oreonvr-shell
 python3-pyside6
 poppler-utils
-kate
-kcalc
+xdg-utils
+ffmpeg-libs
+pipewire
+pipewire-utils
+hunspell
+hunspell-en-US
 
 # Removals
-kde-connect
+-kde-connect
 -tracker
 -ktorrent
 -hplip
 -f44-backgrounds
 -f44-backgrounds-kde
-sssd-kcm
-sssd-common
-sssd
+-sssd-kcm
+-sssd-common
+-sssd
 %end
