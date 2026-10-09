@@ -1,5 +1,5 @@
 #version=DEVEL
-# No X setup / graphical login: the shell owns the screen (default target is set in %post)
+# Do not configure the X Window System
 skipx
 # Keyboard layouts
 keyboard 'us'
@@ -17,14 +17,10 @@ network  --bootproto=dhcp --device=link --activate
 # Oreon repos (primary)
 url --url="https://repo-us.oreonhq.com/oreon-11-rp1/testing/aarch64"
 repo --name="oreon" --baseurl=https://repo-us.oreonhq.com/oreon-11-rp1/testing/aarch64
-# oreonvr-shell comes from the Oreon repo once the build service has built the spec. Until then, point a repo at
-# locally built RPMs (os/out/rpms, after `createrepo_c os/out/rpms`):
-# repo --name="oreonvr-local" --baseurl=file:///path/to/oreonvr/os/out/rpms
 
 firewall --enabled --service=mdns
 selinux --enforcing
 services --disabled="sshd" --enabled="NetworkManager"
-# plymouth off: the shell takes the display directly. ttyAMA0 is the serial console on ARM VMs/boards.
 bootloader --location=none --append="rd.live.image quiet plymouth.enable=0 console=tty0 console=ttyAMA0,115200n8 rd.driver.pre=nouveau"
 zerombr
 clearpart --all --initlabel
@@ -33,28 +29,21 @@ part / --size=10238 --grow
 
 %post
 
+# Enable livesys services
 systemctl enable livesys.service
 systemctl enable livesys-late.service
 
+# Enable Oreon VR
 systemctl enable oreonvr-shell.service
 systemctl set-default multi-user.target
 systemctl mask plasmalogin.service sddm.service
 systemctl --global enable oreonvr-chromium-warmup.service
 
+# enable tmpfs for /tmp
 systemctl enable tmp.mount
-
-# make it so that we don't do writing to the overlay for things which
-# are just tmpdirs/caches
-# note https://bugzilla.redhat.com/show_bug.cgi?id=1135475
-cat >> /etc/fstab << EOF
-vartmp   /var/tmp    tmpfs   defaults   0  0
-EOF
 
 # work around for poor key import UI in PackageKit
 rm -f /var/lib/rpm/__db*
-
-# go ahead and pre-make the man -k cache (#455968)
-/usr/bin/mandb
 
 # make sure there aren't core files lying around
 rm -f /core*
@@ -89,23 +78,17 @@ getent passwd openvpn &>/dev/null || \
     /usr/sbin/useradd -r -g openvpn -s /sbin/nologin -c OpenVPN \
         -d /etc/openvpn openvpn
 
-### Oreon VR ###
-
-# The live user the shell runs its desktop as (oreonvr-pick-user uses it on the live medium)
+# Oreon VR user
 getent passwd oreonvr &>/dev/null || useradd -m -c "Oreon VR" -G wheel,video,input,audio oreonvr
 echo 'oreonvr:oreonvr' | chpasswd
 cat > /etc/sudoers.d/oreonvr << 'EOF'
 oreonvr ALL=(ALL) NOPASSWD: ALL
 EOF
 chmod 0440 /etc/sudoers.d/oreonvr
-# keep its user manager (KWin, Plasma, PipeWire) running without a login
 mkdir -p /var/lib/systemd/linger
 touch /var/lib/systemd/linger/oreonvr
 
-# No polkit agent runs in the headless desktop, so let wheel manage Flatpak/packages from Discover
 cat > /etc/polkit-1/rules.d/50-oreonvr.rules << 'EOF'
-// There is no polkit agent in the headless desktop, so let the wheel group (the Oreon VR user) manage Flatpak and
-// packages from Discover without a password prompt that could never be answered.
 polkit.addRule(function(action, subject) {
   if ((action.id.indexOf("org.freedesktop.Flatpak.") == 0 || action.id.indexOf("org.freedesktop.packagekit.") == 0) &&
       subject.isInGroup("wheel"))
@@ -118,6 +101,7 @@ cat > /etc/xdg/plasma-welcomerc << 'EOF'
 LastSeenVersion=99.0.0
 EOF
 
+# Oreon VR branding
 cat > /usr/lib/os-release << 'EOF'
 NAME="Oreon VR"
 VERSION="11 (Spatial)"
@@ -125,7 +109,7 @@ ID=oreon
 VERSION_ID=11
 VERSION_CODENAME="Lumen"
 PLATFORM_ID="platform:or11"
-PRETTY_NAME="Oreon VR 11"
+PRETTY_NAME="Oreon VR 11 (Spatial)"
 ANSI_COLOR="0;38;2;60;110;180"
 LOGO=oreon-logo-icon
 CPE_NAME="cpe:/o:oreonhq:oreon:11"
@@ -133,30 +117,72 @@ HOME_URL="https://oreonhq.com/"
 DOCUMENTATION_URL="https://wiki.oreonhq.com/"
 SUPPORT_URL="https://oreonhq.com/help/"
 BUG_REPORT_URL="https://community.oreonhq.com/"
-VARIANT="Spatial"
 VARIANT_ID=oreonvr
 EOF
 ln -sf ../usr/lib/os-release /etc/os-release
-echo 'Oreon VR 11 - based on Oreon 11' > /etc/oreonvr-release
+echo 'Oreon VR 11 (Spatial)' > /etc/oreonvr-release
 cat > /etc/issue << 'EOF'
-Oreon VR 11 - \l
+Oreon VR 11 (Spatial) - \l
 
-The desktop is on the screen. This console is a shell.
 User: oreonvr / password: oreonvr
 
 EOF
 
-# Surf's browser engine (Oreon's repos do not ship Chromium); needs network during the build
+# Chromium
 flatpak remote-add --system --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo
 flatpak install --system -y --noninteractive flathub org.chromium.Chromium || \
-    echo "WARNING: Chromium could not be installed; Surf will ask to install it from the Store"
+    echo "WARNING: Chromium could not be installed"
+
+# Memory tuning
+for u in dnf-makecache.timer fwupd-refresh.timer man-db-cache-update.service man-db-restart-cache-update.service \
+         ModemManager.service mdmonitor.service lvm2-monitor.service; do
+    systemctl disable "$u" 2>/dev/null || :
+done
+mkdir -p /etc/systemd/journald.conf.d
+cat > /etc/systemd/journald.conf.d/oreonvr.conf << 'EOF'
+[Journal]
+SystemMaxUse=64M
+RuntimeMaxUse=32M
+EOF
+cat > /etc/xdg/baloofilerc << 'EOF'
+[Basic Settings]
+Indexing-Enabled=false
+EOF
+for p in zram-generator earlyoom; do
+    dnf -y install --setopt=install_weak_deps=False "$p" || echo "NOTE: $p not available, skipped"
+done
+if [ -e /usr/lib/systemd/system-generators/zram-generator ]; then
+    cat > /etc/systemd/zram-generator.conf << 'EOF'
+[zram0]
+zram-size = ram
+compression-algorithm = zstd
+EOF
+    cat > /etc/sysctl.d/90-oreonvr-zram.conf << 'EOF'
+vm.swappiness = 180
+vm.page-cluster = 0
+EOF
+fi
+if [ -e /usr/bin/earlyoom ] && ! systemctl -q is-enabled systemd-oomd 2>/dev/null; then
+    cat > /etc/default/earlyoom << 'EOF'
+EARLYOOM_ARGS="-r 0 -m 4 -s 10 --avoid ^(oreonvr-.*|kwin_wayland|plasmashell|Xwayland|pipewire|wireplumber|systemd)$ --prefer ^(chrome|chromium)$"
+EOF
+    systemctl enable earlyoom.service
+fi
+
+# Remove unused extras (rpm -e keeps anything still required)
+for p in plasma-welcome plasma-discover-notifier PackageKit-command-not-found plasma-browser-integration \
+         plasma-thunderbolt khelpcenter abrt-desktop abrt-cli abrt; do
+    rpm -q "$p" >/dev/null 2>&1 && { rpm -e "$p" 2>/dev/null || echo "NOTE: kept $p (still required)"; }
+done
+
+flatpak uninstall --system -y --noninteractive --unused || :
+dnf clean all || :
 
 restorecon -RF /etc /usr/lib/os-release /var/lib/flatpak /var/lib/systemd/linger /home/oreonvr 2>/dev/null || :
 
 %end
 
 %packages
-@base-x
 # @kde-desktop
 
 # Core and Kernel
@@ -177,6 +203,7 @@ efitools
 oreon-system-manager
 root-protection
 oreon-defense
+oreon-wallpapers
 
 # System Essentials
 bash
@@ -206,7 +233,6 @@ grub2-efi-aa64-cdboot
 efibootmgr
 rsync
 flatpak
-plymouth
 lvm2
 snapper
 boom-boot
@@ -218,13 +244,14 @@ mesa-vulkan-drivers
 vulkan-loader
 libdrm
 qt6-qtwayland
-xorg-x11-drv-nouveau
+xorg-x11-server-Xwayland
 alsa-sof-firmware
 kwrite
 plasma-systemmonitor
 ark
 libGLES
 lspci
+# uncomment once built below
 # gparted
 
 # Minimal KDE Plasma
@@ -240,7 +267,6 @@ dolphin
 plasma-systemsettings
 plasma-discover
 plasma-nm
-plasma-setup
 
 # Oreon VR
 oreonvr-shell
