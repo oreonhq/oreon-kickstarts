@@ -119,6 +119,7 @@ efitools
 oreon-system-manager
 root-protection
 oreon-defense
+oreon-wallpapers
 
 # System Essentials
 bash
@@ -185,7 +186,7 @@ plasma-nm
 plasma-setup
 
 # Removals
-kde-connect
+-kde-connect
 -tracker
 -ktorrent
 -hplip
