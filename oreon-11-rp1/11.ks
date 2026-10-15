@@ -170,8 +170,7 @@ plasma-systemmonitor
 ark
 libGLES
 lspci
-# uncomment once built below
-# gparted
+gparted
 
 # Minimal KDE Plasma
 plasma-desktop
