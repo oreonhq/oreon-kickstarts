@@ -10,12 +10,10 @@ network  --bootproto=dhcp --device=link --activate
 # Shutdown after installation
 shutdown
 # Repos
-url --url="https://packages.redhat.com/api/pulp-content/public-copr/brandonlester/oreon-10/centos-stream-10-$basearch"
+url --url="https://repo-us.oreonhq.com/oreon-10/stable/$basearch"
 
 repo --name="devel" --baseurl=https://raw.repo.almalinux.org/almalinux/10/devel/$basearch/os/ --excludepkgs="kpatch, kpatch-dnf, almalinux-release, anaconda, anaconda-gui, anaconda-core, anaconda-tui, anaconda-widgets, almalinux-indexhtml, almalinux-bookmarks, firefox"
-repo --name="oreon" --baseurl=https://packages.redhat.com/api/pulp-content/public-copr/brandonlester/oreon-10/centos-stream-10-$basearch
-repo --name="oreonoldrepo" --baseurl=https://packages.boostyconnect.com/oreon-10/$basearch/
-repo --name="oreonextras" --baseurl=https://packages.boostyconnect.com/oreon-10/extras-$basearch/
+repo --name="oreon" --baseurl=https://repo-us.oreonhq.com/oreon-10/stable/$basearch
 repo --name="epel" --baseurl=https://dl.fedoraproject.org/pub/epel/10/Everything/$basearch/
 repo --name="base" --baseurl=https://repo.almalinux.org/almalinux/10/BaseOS/$basearch/os/ --excludepkgs="anaconda-live, kpatch, kpatch-dnf, almalinux-release, anaconda, anaconda-gui, anaconda-core, anaconda-tui, anaconda-widgets, almalinux-indexhtml, almalinux-bookmarks, firefox"
 repo --name="appstream" --baseurl=https://repo.almalinux.org/almalinux/10/AppStream/$basearch/os/ --excludepkgs="anaconda-live, kpatch, kpatch-dnf, almalinux-release, anaconda, anaconda-gui, anaconda-core, anaconda-tui, anaconda-widgets, almalinux-indexhtml, almalinux-bookmarks, firefox"
@@ -140,6 +138,7 @@ gnome-shell-extension-blur-my-shell-oreon
 gnome-shell-extension-desktop-icons
 gnome-shell-oreon-theming
 oreon-shell-theme
+oreon-defense
 kernel-devel
 dracut-live
 python3-crypt-r
