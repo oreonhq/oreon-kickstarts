@@ -141,6 +141,5 @@ oreon-shell-theme
 oreon-defense
 kernel-devel
 dracut-live
-python3-crypt-r
 
 %end
