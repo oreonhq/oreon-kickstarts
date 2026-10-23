@@ -127,6 +127,7 @@ atheros-firmware
 -almalinux-backgrounds
 -almalinux-repos
 -firefox
+-kdump-anaconda-addon
 oreon-repos
 oreon-logos
 oreon-release
