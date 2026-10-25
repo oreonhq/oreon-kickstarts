@@ -28,8 +28,6 @@ selinux --enforcing
 services --disabled="sshd" --enabled="NetworkManager,ModemManager"
 # System timezone
 timezone US/Eastern
-# Use network installation
-url --mirrorlist="https://mirrors.fedoraproject.org/mirrorlist?repo=rawhide&arch=$basearch"
 # X Window System configuration information
 xconfig  --startxonboot
 # System bootloader configuration
