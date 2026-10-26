@@ -139,5 +139,8 @@ oreon-shell-theme
 oreon-defense
 kernel-devel
 dracut-live
+-f45-backgrounds-base
+-f45-backgrounds-gnome
+-desktop-backgrounds-gnome
 
 %end

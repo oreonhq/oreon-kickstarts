@@ -145,5 +145,8 @@ memtest86+
 -grub2-efi-ia32-cdboot
 grub2-efi-x64
 shim-x64
+-f45-backgrounds-base
+-f45-backgrounds-gnome
+-desktop-backgrounds-gnome
 
 %end
