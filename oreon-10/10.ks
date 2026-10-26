@@ -141,5 +141,9 @@ oreon-defense
 kernel-devel
 dracut-live
 memtest86+
+-grub2-efi-ia32
+-grub2-efi-ia32-cdboot
+grub2-efi-x64
+shim-x64
 
 %end
